@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/\")",
+      "Bash(npm install)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(cat \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/.claude/settings.json\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); hooks=d.get\\(''hooks'',{}\\); [print\\(k,json.dumps\\(v,indent=2\\)\\) for k,v in hooks.items\\(\\)]\")",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/public/\")",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS\" -name \"og-image*\")",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/\")",
+      "Bash(cat \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/index.html\")",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/assets/\")",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/src\" -type f)",
+      "Bash(wc -l \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/lei-order-form.jsx\")",
+      "Bash(sips -s format jpeg \"/Users/chadwickturner/Downloads/IMG_3358.HEIC\" --out /tmp/pricing_sheet.jpg --resampleWidth 1200)",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/src/\")",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/\")",
+      "Bash(python3:*)",
+      "Bash(npm run:*)",
+      "Bash(find ~/Documents -name .git -type d -not -path */node_modules/*)",
+      "Bash(cat \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/CNAME\")",
+      "Bash(\"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/CNAME\")",
+      "Bash(gh auth:*)",
+      "Bash(git --version)",
+      "Bash(cp \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/index.html\" /tmp/funleis/index.html)",
+      "Bash(cp \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/CNAME\" /tmp/funleis/CNAME)",
+      "Bash(rm /tmp/funleis/assets/index-CRfOECjH.js)",
+      "Bash(cp \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/assets/index-0mogxV1P.js\" /tmp/funleis/assets/)",
+      "Bash(ls \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & BRAIDS/dist/gallery/\")",
+      "Bash(ls -la \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code\")",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code/src\" -type f)",
+      "Bash(ls -la \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code/public\")",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code/dist\" -type f)",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code\" -maxdepth 1 -type f -name \".*\")",
+      "Bash(ls -la \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code/.github\")",
+      "Bash(find \"/Users/chadwickturner/Documents/_BURNPILES/PROJECTS/BUTTONS & LEIS/Buttons & Leis - Site Code/.github/workflows\" -type f)"
+    ]
+  }
+}
