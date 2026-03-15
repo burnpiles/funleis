@@ -261,6 +261,7 @@ const LEI_TIERS = [
   { key: 'money', label: 'Decorative Money Lei', price: 65, description: 'Includes 20 × $1 bills — amount cannot be modified' },
 ];
 const BUTTON_PRICE = 5;
+const SHIPPING_PRICE = 15;
 
 // ── Stripe Payment Links ─────────────────────────────────────────────────────
 // Each product has two links: one for USPS shipping, one for local pickup (98391)
@@ -402,10 +403,11 @@ function LeiDrapePreview({ colors, hasMoney, billDenom, billCount, themes, custo
 }
 
 // ── PRICING CARD ────────────────────────────────────────────────────────────
-function PricingCard({ leiTier, wantsButton, colors }) {
+function PricingCard({ leiTier, wantsButton, colors, fulfillment }) {
   const tier = LEI_TIERS.find(t => t.key === leiTier) || LEI_TIERS[0];
   const buttonAddOn = wantsButton ? BUTTON_PRICE : 0;
-  const total = tier.price + buttonAddOn;
+  const shippingCost = fulfillment === "shipping" ? SHIPPING_PRICE : 0;
+  const total = tier.price + buttonAddOn + shippingCost;
   return (
     <div style={{background:"white",borderRadius:"16px",padding:"20px",boxShadow:"0 2px 16px rgba(0,0,0,0.07)",fontSize:"13px",fontFamily:"sans-serif"}}>
       <h4 style={{margin:"0 0 12px",color:"#5a3000",fontSize:"14px",fontWeight:"700",letterSpacing:"0.5px"}}>💰 Estimated Total</h4>
@@ -427,14 +429,26 @@ function PricingCard({ leiTier, wantsButton, colors }) {
           </div>
         )}
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",color:"#9a7040",fontStyle:"italic"}}>
-        <span>+ Shipping (if USPS)</span><span>+$15.00</span>
-      </div>
+      {fulfillment === "shipping" && (
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",color:"#7a5520"}}>
+          <span>🚚 USPS Shipping</span><span>+$15.00</span>
+        </div>
+      )}
+      {fulfillment === "pickup" && (
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",color:"#059669",fontWeight:"600"}}>
+          <span>📍 Local Pickup</span><span style={{color:"#059669"}}>FREE</span>
+        </div>
+      )}
+      {!fulfillment && (
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",color:"#9a7040",fontStyle:"italic"}}>
+          <span>+ Shipping (select below)</span><span>+$15 or FREE</span>
+        </div>
+      )}
       <div style={{borderTop:"2px solid #e5c88a",marginTop:"8px",paddingTop:"8px",display:"flex",justifyContent:"space-between",fontWeight:"800",fontSize:"16px",color:"#3d1500"}}>
-        <span>Subtotal</span><span>${total.toFixed(2)}</span>
+        <span>Total</span><span>${total.toFixed(2)}</span>
       </div>
       <p style={{margin:"8px 0 0",fontSize:"10px",color:"#b08050",lineHeight:"1.5"}}>
-        Choose shipping or local pickup at checkout · Payment via Stripe
+        Payment via Stripe — no account needed
       </p>
     </div>
   );
@@ -640,27 +654,28 @@ function GalleryPage({ onOrderItem }) {
           }}>
           <style>{`@keyframes modalFadeIn{from{opacity:0}to{opacity:1}} @keyframes modalImgIn{from{transform:scale(0.92);opacity:0}to{transform:scale(1);opacity:1}}`}</style>
           <button onClick={close} style={{
-            position:"absolute",top:"20px",right:"24px",
-            background:"rgba(255,255,255,0.12)",border:"none",color:"white",
-            width:"44px",height:"44px",borderRadius:"50%",fontSize:"22px",
-            cursor:"pointer",zIndex:1,backdropFilter:"blur(4px)",
+            position:"absolute",top:"16px",right:"16px",
+            background:"rgba(255,255,255,0.18)",border:"2px solid rgba(255,255,255,0.25)",color:"white",
+            width:"48px",height:"48px",borderRadius:"50%",fontSize:"22px",
+            cursor:"pointer",zIndex:1,backdropFilter:"blur(6px)",
             display:"flex",alignItems:"center",justifyContent:"center",
           }}>✕</button>
           {GALLERY_ITEMS.length > 1 && (
             <button onClick={e => { e.stopPropagation(); prev(); }} style={{
-              position:"absolute",left:"16px",top:"50%",transform:"translateY(-50%)",
-              background:"rgba(255,255,255,0.12)",border:"none",color:"white",
-              width:"48px",height:"48px",borderRadius:"50%",fontSize:"24px",
-              cursor:"pointer",backdropFilter:"blur(4px)",
+              position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",
+              background:"rgba(255,255,255,0.18)",border:"2px solid rgba(255,255,255,0.25)",color:"white",
+              width:"52px",height:"52px",borderRadius:"50%",fontSize:"28px",
+              cursor:"pointer",backdropFilter:"blur(6px)",
+              display:"flex",alignItems:"center",justifyContent:"center",
             }}>‹</button>
           )}
           <div onClick={e => e.stopPropagation()} style={{
-            maxWidth:"min(90vw,560px)",maxHeight:"90vh",
+            maxWidth:"min(96vw,860px)",maxHeight:"96vh",
             display:"flex",flexDirection:"column",alignItems:"center",gap:"14px",
             animation:"modalImgIn 0.25s ease-out",
           }}>
             <img src={GALLERY_ITEMS[modal].src} alt={GALLERY_ITEMS[modal].caption}
-              style={{maxWidth:"100%",maxHeight:"76vh",borderRadius:"16px",objectFit:"contain",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}/>
+              style={{maxWidth:"100%",maxHeight:"84vh",borderRadius:"16px",objectFit:"contain",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}/>
             <div style={{textAlign:"center"}}>
               <div style={{color:"white",fontSize:"15px",fontWeight:"700",fontFamily:"sans-serif",marginBottom:"6px"}}>{GALLERY_ITEMS[modal].caption}</div>
               <button onClick={() => { close(); onOrderItem && onOrderItem({ tier: GALLERY_ITEMS[modal].tier, prePopulate: GALLERY_ITEMS[modal].prePopulate }); }}
@@ -672,10 +687,11 @@ function GalleryPage({ onOrderItem }) {
           </div>
           {GALLERY_ITEMS.length > 1 && (
             <button onClick={e => { e.stopPropagation(); next(); }} style={{
-              position:"absolute",right:"16px",top:"50%",transform:"translateY(-50%)",
-              background:"rgba(255,255,255,0.12)",border:"none",color:"white",
-              width:"48px",height:"48px",borderRadius:"50%",fontSize:"24px",
-              cursor:"pointer",backdropFilter:"blur(4px)",
+              position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",
+              background:"rgba(255,255,255,0.18)",border:"2px solid rgba(255,255,255,0.25)",color:"white",
+              width:"52px",height:"52px",borderRadius:"50%",fontSize:"28px",
+              cursor:"pointer",backdropFilter:"blur(6px)",
+              display:"flex",alignItems:"center",justifyContent:"center",
             }}>›</button>
           )}
         </div>
@@ -1011,20 +1027,23 @@ function AdminPage() {
     <div style={{minHeight:"100vh",background:"#f5f0e8",fontFamily:"sans-serif"}}>
 
       {/* ── HEADER ── */}
-      <div style={{background:"linear-gradient(135deg,#3d1f00,#7a3d00)",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"10px",position:"sticky",top:0,zIndex:100}}>
-        <div>
-          <div style={{color:"#FFD166",fontSize:"17px",fontWeight:"800",letterSpacing:"2px"}}>🌺 BUTTONS & LEIS</div>
-          <div style={{color:"rgba(255,220,150,0.65)",fontSize:"11px",marginTop:"1px"}}>Order Dashboard</div>
+      <div style={{background:"linear-gradient(135deg,#2d1200,#6a3000)",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"10px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 12px rgba(0,0,0,0.3)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          <div style={{fontSize:"28px"}}>🌺</div>
+          <div>
+            <div style={{color:"#FFD166",fontSize:"15px",fontWeight:"800",letterSpacing:"1.5px"}}>BUTTONS & LEIS</div>
+            <div style={{color:"rgba(255,220,150,0.6)",fontSize:"10px",marginTop:"1px",letterSpacing:"0.5px"}}>ORDER DASHBOARD</div>
+          </div>
+          {orders && <div style={{background:"rgba(255,209,102,0.2)",border:"1px solid rgba(255,209,102,0.3)",color:"#FFD166",borderRadius:"20px",padding:"3px 10px",fontSize:"12px",fontWeight:"700"}}>{orders.length} orders</div>}
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-          {orders && <span style={{color:"rgba(255,220,150,0.8)",fontSize:"12px"}}>{orders.length} total</span>}
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <button onClick={reload}
-            style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.25)",color:"white",borderRadius:"8px",padding:"7px 13px",cursor:"pointer",fontSize:"12px"}}>
+            style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",color:"white",borderRadius:"8px",padding:"8px 14px",cursor:"pointer",fontSize:"12px",fontWeight:"600"}}>
             ↺ Refresh
           </button>
           <button onClick={() => { window.location.hash=""; }}
-            style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.25)",color:"white",borderRadius:"8px",padding:"7px 13px",cursor:"pointer",fontSize:"12px"}}>
-            ← Site
+            style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",color:"white",borderRadius:"8px",padding:"8px 14px",cursor:"pointer",fontSize:"12px",fontWeight:"600"}}>
+            ← Back to Site
           </button>
         </div>
       </div>
@@ -1190,80 +1209,86 @@ function AdminPage() {
                   </div>
 
                   {/* Status buttons */}
-                  <div style={{padding:"14px 16px",borderBottom:"1px solid #f0e8d8"}}>
-                    <div style={{fontSize:"11px",color:"#9a7040",fontWeight:"700",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Set Status</div>
-                    <div className="admin-status-row" style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                  <div style={{padding:"16px 18px",borderBottom:"1px solid #f0e8d8"}}>
+                    <div style={{fontSize:"10px",color:"#b08050",fontWeight:"700",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>📌 Order Status</div>
+                    <div className="admin-status-row" style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
                       {ADMIN_STATUS_OPTIONS.map(key => {
                         const s = STATUS_MAP[key];
                         const isActive = st === key;
                         return (
                           <button key={key} onClick={() => setStatus(order, key)}
-                            style={{padding:"6px 12px",borderRadius:"20px",border:`2px solid ${isActive?s.color:"#e0c89a"}`,
-                              background:isActive?s.bg:"white",color:isActive?s.color:"#9a7040",
-                              cursor:"pointer",fontSize:"12px",fontWeight:isActive?"700":"500",transition:"all 0.15s"}}>
+                            style={{padding:"7px 14px",borderRadius:"20px",border:`2px solid ${isActive?s.color:"#e5d5b5"}`,
+                              background:isActive?s.color:"white",color:isActive?"white":"#9a7040",
+                              cursor:"pointer",fontSize:"12px",fontWeight:"600",transition:"all 0.15s",
+                              boxShadow:isActive?`0 2px 8px ${s.color}44`:"none"}}>
                             {s.label}
                           </button>
                         );
                       })}
                     </div>
-                    {/* Read-only auto-set statuses */}
                     {["payment_abandoned","payment_failed"].includes(st) && (
-                      <div style={{marginTop:"8px",fontSize:"12px",color:st==="payment_failed"?"#991b1b":"#713f12",fontWeight:"600"}}>
+                      <div style={{marginTop:"10px",fontSize:"12px",color:st==="payment_failed"?"#991b1b":"#92400e",fontWeight:"600",background:st==="payment_failed"?"#fee2e2":"#fef9c3",padding:"6px 10px",borderRadius:"6px",display:"inline-block"}}>
                         {sc.label} — set automatically by Stripe
                       </div>
                     )}
                     {emailResult[order.id] && (
-                      <div style={{marginTop:"8px",fontSize:"12px",color:"#166534",fontWeight:"600"}}>{emailResult[order.id]}</div>
+                      <div style={{marginTop:"10px",fontSize:"13px",color:"#166534",fontWeight:"700",background:"#dcfce7",padding:"6px 12px",borderRadius:"8px",display:"inline-block"}}>{emailResult[order.id]}</div>
                     )}
                   </div>
 
                   {/* Manual email buttons */}
-                  <div style={{padding:"12px 16px",borderBottom:"1px solid #f0e8d8",background:"#f8f4ed"}}>
-                    <div style={{fontSize:"11px",color:"#9a7040",fontWeight:"700",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Send Customer Email</div>
+                  <div style={{padding:"16px 18px",borderBottom:"1px solid #f0e8d8",background:"linear-gradient(135deg,#fff8ee,#fff4e6)"}}>
+                    <div style={{fontSize:"10px",color:"#b08050",fontWeight:"700",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>📧 Email Customer</div>
                     <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                       {[
-                        {status:"making", label:"🔨 We're Making It!"},
-                        {status:"ready",  label: order.fulfillment==="pickup" ? "📍 Ready for Pickup" : "📦 Shipped!"},
-                        {status:"delivered", label:"✅ Delivered"},
+                        {status:"making",    label:"🔨 We're Making It!",    bg:"#7c3aed",shadow:"#7c3aed44"},
+                        {status:"ready",     label: order.fulfillment==="pickup" ? "📍 Ready for Pickup" : "📦 Shipped!", bg:"#059669",shadow:"#05966944"},
+                        {status:"delivered", label:"✅ Delivered",            bg:"#0369a1",shadow:"#0369a144"},
                       ].map(btn => (
                         <button key={btn.status}
                           disabled={emailSending[order.id]}
                           onClick={() => sendStatusEmail(order, btn.status)}
-                          style={{padding:"7px 14px",borderRadius:"8px",border:"1.5px solid #c8833a",background:"white",color:"#c8833a",cursor:"pointer",fontSize:"12px",fontWeight:"600",opacity:emailSending[order.id]?0.5:1}}>
-                          {btn.label}
+                          style={{padding:"9px 16px",borderRadius:"10px",border:"none",
+                            background:emailSending[order.id]?"#e5e7eb":btn.bg,
+                            color:"white",cursor:emailSending[order.id]?"not-allowed":"pointer",
+                            fontSize:"13px",fontWeight:"700",
+                            boxShadow:emailSending[order.id]?"none":`0 3px 10px ${btn.shadow}`,
+                            transition:"all 0.15s",opacity:emailSending[order.id]?0.6:1}}>
+                          {emailSending[order.id] ? "Sending…" : btn.label}
                         </button>
                       ))}
                     </div>
+                    <div style={{marginTop:"8px",fontSize:"11px",color:"#b08050"}}>Sends an email to the customer and updates order status.</div>
                   </div>
 
                   {/* Admin notes */}
-                  <div style={{padding:"14px 16px",borderBottom:"1px solid #f0e8d8"}}>
-                    <div style={{fontSize:"11px",color:"#9a7040",fontWeight:"700",marginBottom:"7px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Admin Notes</div>
+                  <div style={{padding:"16px 18px",borderBottom:"1px solid #f0e8d8"}}>
+                    <div style={{fontSize:"10px",color:"#b08050",fontWeight:"700",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>📝 Admin Notes</div>
                     <div style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
                       <textarea
                         value={notesDraft[order.id]||""}
                         onChange={e => setNotesDraft(prev=>({...prev,[order.id]:e.target.value}))}
                         placeholder="Pickup date, tracking #, special instructions…"
                         rows={2}
-                        style={{flex:1,padding:"9px 12px",borderRadius:"8px",border:"1.5px solid #e0c89a",fontSize:"13px",fontFamily:"sans-serif",resize:"vertical",outline:"none",background:"#fffdf8"}}
+                        style={{flex:1,padding:"10px 13px",borderRadius:"10px",border:"1.5px solid #e0c89a",fontSize:"13px",fontFamily:"sans-serif",resize:"vertical",outline:"none",background:"#fffdf8",lineHeight:"1.5"}}
                       />
                       <button onClick={() => saveNotes(order.id)}
-                        style={{padding:"9px 14px",borderRadius:"8px",background:"#c8833a",color:"white",border:"none",cursor:"pointer",fontSize:"12px",fontWeight:"600",whiteSpace:"nowrap"}}>
+                        style={{padding:"10px 16px",borderRadius:"10px",background:"linear-gradient(135deg,#c8833a,#a85200)",color:"white",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:"700",whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(168,82,0,0.3)"}}>
                         Save
                       </button>
                     </div>
                     {order.admin_notes && (
-                      <div style={{marginTop:"6px",fontSize:"12px",color:"#7a5520",background:"#fef9ec",padding:"6px 10px",borderRadius:"6px",border:"1px solid #f0d88a"}}>
+                      <div style={{marginTop:"8px",fontSize:"12px",color:"#7a5520",background:"#fef9ec",padding:"8px 12px",borderRadius:"8px",border:"1px solid #f0d88a",lineHeight:"1.5"}}>
                         <strong>Saved:</strong> {order.admin_notes}
                       </div>
                     )}
                   </div>
 
                   {/* Delete */}
-                  <div style={{padding:"10px 16px",display:"flex",justifyContent:"flex-end"}}>
+                  <div style={{padding:"12px 18px",display:"flex",justifyContent:"flex-end",background:"#fafaf8"}}>
                     <button onClick={() => deleteOrder(order.id)}
-                      style={{padding:"6px 14px",borderRadius:"20px",border:"2px solid #fca5a5",
-                        background:"white",color:"#dc2626",cursor:"pointer",fontSize:"12px",fontWeight:"600"}}>
+                      style={{padding:"7px 16px",borderRadius:"20px",border:"1.5px solid #fca5a5",
+                        background:"white",color:"#dc2626",cursor:"pointer",fontSize:"12px",fontWeight:"600",transition:"all 0.15s"}}>
                       🗑 Delete Order
                     </button>
                   </div>
@@ -1294,6 +1319,7 @@ function App() {
   }, []);
 
   const handleOrderItem = (config) => {
+    window.scrollTo(0, 0);
     if (config && config.page === 'button-order') {
       setPage('button-order');
       setOrderConfig(null);
@@ -1330,6 +1356,9 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
   const [wantsButton, setWantsButton] = useState(null);
   const [buttonText, setButtonText] = useState("");
 
+  // Fulfillment
+  const [fulfillment, setFulfillment] = useState(null); // null | "shipping" | "pickup"
+
   // Contact info
   const [form, setForm] = useState({ parentName:"", email:"", phone:"", recipientName:"", shippingAddress:"", notes:"" });
   const [submitted, setSubmitted] = useState(null); // null = not submitted, or the saved order object
@@ -1352,13 +1381,16 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
   // ── PRICING ──
   const tierPrice = LEI_TIERS.find(t => t.key === leiTier)?.price || 35;
   const buttonAddOn = wantsButton ? BUTTON_PRICE : 0;
-  const total = tierPrice + buttonAddOn;
+  const shippingCost = fulfillment === "shipping" ? SHIPPING_PRICE : 0;
+  const total = tierPrice + buttonAddOn + shippingCost;
 
   // ── VALIDATION ──
   const formValid = selectedColors.length >= 2
     && form.parentName && form.email && form.phone && form.recipientName
     && wantsButton !== null
-    && (wantsButton === false || buttonText.trim().length > 0);
+    && (wantsButton === false || buttonText.trim().length > 0)
+    && fulfillment !== null
+    && (fulfillment === "pickup" || form.shippingAddress.trim().length > 0);
 
   // ── SUBMIT ──
   const handleSubmit = async () => {
@@ -1367,6 +1399,7 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
       submittedAt: new Date().toISOString(),
       status: "new",
       type: 'lei',
+      fulfillment,
       contact: { ...form },
       design: {
         leiTier,
@@ -1387,37 +1420,39 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
     const tierInfo = LEI_TIERS.find(t => t.key === submitted.design.leiTier) || LEI_TIERS[0];
     const ordId = submitted.id;
     const emailEnc = encodeURIComponent(submitted.contact.email || "");
-    const shipLink = `${STRIPE_LINKS[`${submitted.design.leiTier}_ship`]}?client_reference_id=${ordId}__shipping&prefilled_email=${emailEnc}`;
-    const pickupLink = `${STRIPE_LINKS[`${submitted.design.leiTier}_pickup`]}?client_reference_id=${ordId}__pickup&prefilled_email=${emailEnc}`;
-    const buttonShipLink = `${STRIPE_LINKS.button_ship}?client_reference_id=${ordId}_btn__shipping&prefilled_email=${emailEnc}`;
-    const buttonPickupLink = `${STRIPE_LINKS.button_pickup}?client_reference_id=${ordId}_btn__pickup&prefilled_email=${emailEnc}`;
+    const chosenFulfillment = submitted.fulfillment || "shipping";
+    const payLink = `${STRIPE_LINKS[`${submitted.design.leiTier}_${chosenFulfillment}`]}?client_reference_id=${ordId}__${chosenFulfillment}&prefilled_email=${emailEnc}`;
+    const buttonPayLink = `${STRIPE_LINKS[`button_${chosenFulfillment}`]}?client_reference_id=${ordId}_btn__${chosenFulfillment}&prefilled_email=${emailEnc}`;
+    const isPickup = chosenFulfillment === "pickup";
+    const submittedShipping = fulfillment === "shipping" ? SHIPPING_PRICE : 0;
     return (
       <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#fdf6ec,#fce4b8)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Georgia',serif",padding:"24px"}}>
         <div style={{background:"white",borderRadius:"24px",padding:"40px 32px",textAlign:"center",maxWidth:"480px",width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.1)"}}>
           <div style={{fontSize:"52px",marginBottom:"10px"}}>🌺</div>
           <h2 style={{fontSize:"24px",color:"#5a3e1b",marginBottom:"8px",fontStyle:"italic"}}>Order Received!</h2>
           <p style={{color:"#8a6a40",lineHeight:"1.7",marginBottom:"4px",fontFamily:"sans-serif",fontSize:"14px"}}>
-            Thank you, <strong>{submitted.contact.parentName}</strong>! We're so excited to make a custom lei for <strong>{submitted.contact.recipientName}</strong>. 🌸
+            Thank you, <strong>{submitted.contact.parentName}</strong>! We're so excited to make a custom product for <strong>{submitted.contact.recipientName}</strong>. 🌸
           </p>
-          <p style={{color:"#8a6a40",lineHeight:"1.7",marginBottom:"20px",fontFamily:"sans-serif",fontSize:"13px"}}>
+          <p style={{color:"#8a6a40",lineHeight:"1.7",marginBottom:"16px",fontFamily:"sans-serif",fontSize:"13px"}}>
             You'll receive a confirmation email at <strong>{submitted.contact.email}</strong> once payment is complete.
           </p>
 
-          {/* ── LEI PAYMENT ── */}
+          {/* Fulfillment confirmation */}
+          <div style={{background: isPickup ? "#f0fdf4" : "#f0f9ff", border: `1px solid ${isPickup ? "#bbf7d0" : "#bae6fd"}`, borderRadius:"12px", padding:"12px 16px", marginBottom:"16px", fontSize:"13px", fontFamily:"sans-serif", color: isPickup ? "#14532d" : "#0c4a6e", fontWeight:"600"}}>
+            {isPickup
+              ? "📍 Local Pickup selected — we'll email you to coordinate a drop-off time and location once your product is ready."
+              : `🚚 USPS Shipping selected — shipping to: ${submitted.contact.shippingAddress}`}
+          </div>
+
+          {/* ── PAYMENT ── */}
           <div style={{background:"#f8f4ff",borderRadius:"16px",padding:"20px",marginBottom:"16px",border:"1px solid #d4c4f8"}}>
             <div style={{fontSize:"13px",fontWeight:"700",color:"#4f46e5",marginBottom:"12px",fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.5px"}}>
-              💳 Step 1 — Pay for Your Lei
+              💳 {submitted.design.wantsButton ? "Step 1 — " : ""}Pay for Your Product
             </div>
-            <div style={{display:"flex",gap:"10px",justifyContent:"center",flexWrap:"wrap"}}>
-              <a href={shipLink} target="_blank" rel="noopener noreferrer"
-                style={{display:"inline-block",background:"linear-gradient(135deg,#635bff,#4f46e5)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"13px 22px",fontSize:"14px",fontWeight:"700",boxShadow:"0 4px 16px rgba(99,91,255,0.35)"}}>
-                🚚 Ship to Me (USPS +$15)
-              </a>
-              <a href={pickupLink} target="_blank" rel="noopener noreferrer"
-                style={{display:"inline-block",background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"13px 22px",fontSize:"14px",fontWeight:"700",boxShadow:"0 4px 16px rgba(14,165,233,0.35)"}}>
-                📍 Local Pickup (98391)
-              </a>
-            </div>
+            <a href={payLink} target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-block",background: isPickup ? "linear-gradient(135deg,#0ea5e9,#0284c7)" : "linear-gradient(135deg,#635bff,#4f46e5)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"14px 28px",fontSize:"15px",fontWeight:"700",boxShadow: isPickup ? "0 4px 16px rgba(14,165,233,0.35)" : "0 4px 16px rgba(99,91,255,0.35)"}}>
+              {isPickup ? "📍 Pay — Local Pickup" : "🚚 Pay — Ship to Me (USPS +$15)"}
+            </a>
           </div>
 
           {/* ── BUTTON ADD-ON PAYMENT (if applicable) ── */}
@@ -1426,28 +1461,19 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
               <div style={{fontSize:"13px",fontWeight:"700",color:"#166534",marginBottom:"12px",fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.5px"}}>
                 🔘 Step 2 — Pay for Button Add-on ($5)
               </div>
-              <div style={{display:"flex",gap:"10px",justifyContent:"center",flexWrap:"wrap"}}>
-                <a href={buttonShipLink} target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-block",background:"rgba(22,163,74,0.1)",color:"#166534",border:"2px solid #16a34a",textDecoration:"none",borderRadius:"10px",padding:"10px 18px",fontSize:"13px",fontWeight:"700"}}>
-                  🚚 Button — Ship
-                </a>
-                <a href={buttonPickupLink} target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-block",background:"rgba(22,163,74,0.1)",color:"#166534",border:"2px solid #16a34a",textDecoration:"none",borderRadius:"10px",padding:"10px 18px",fontSize:"13px",fontWeight:"700"}}>
-                  📍 Button — Pickup
-                </a>
-              </div>
-              <p style={{color:"#166534",fontSize:"11px",marginTop:"8px",fontFamily:"sans-serif"}}>Click the same option (ship or pickup) as above</p>
+              <a href={buttonPayLink} target="_blank" rel="noopener noreferrer"
+                style={{display:"inline-block",background:"rgba(22,163,74,0.1)",color:"#166534",border:"2px solid #16a34a",textDecoration:"none",borderRadius:"10px",padding:"10px 18px",fontSize:"13px",fontWeight:"700"}}>
+                {isPickup ? "📍 Button — Pickup" : "🚚 Button — Ship"}
+              </a>
             </div>
           )}
 
-          <p style={{color:"#9a7040",fontSize:"11px",marginBottom:"20px",fontFamily:"sans-serif"}}>Secure payment powered by Stripe · Each lei is handmade just for you!</p>
+          <p style={{color:"#9a7040",fontSize:"11px",marginBottom:"20px",fontFamily:"sans-serif"}}>Secure payment powered by Stripe · Each product is handmade just for you!</p>
 
           {/* Order summary */}
           <div style={{background:"#fdf6ec",borderRadius:"12px",padding:"14px",textAlign:"left",fontSize:"13px",color:"#6a4e2a",fontFamily:"sans-serif",lineHeight:"1.8",marginBottom:"20px"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px",color:"#7a5520",alignItems:"center"}}>
-              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                {tierInfo.label} — {submitted.design.colors.join(", ")}
-              </span>
+              <span>{tierInfo.label} — {submitted.design.colors.join(", ")}</span>
               <span>${tierInfo.price}.00</span>
             </div>
             {submitted.design.wantsButton && (
@@ -1455,14 +1481,17 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
                 <span>Button Add-on</span><span>+$5.00</span>
               </div>
             )}
-            {submitted.contact.shippingAddress && (
-              <div style={{marginTop:"6px",paddingTop:"6px",borderTop:"1px dashed #ddd",color:"#9a7040",fontSize:"12px"}}>
-                <strong>Address on file:</strong> {submitted.contact.shippingAddress}
+            {!isPickup && (
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px",color:"#7a5520"}}>
+                <span>USPS Shipping</span><span>+$15.00</span>
               </div>
             )}
+            <div style={{borderTop:"1px dashed #ddd",marginTop:"6px",paddingTop:"6px",display:"flex",justifyContent:"space-between",fontWeight:"700",color:"#3d1500"}}>
+              <span>Total</span><span>${submitted.total.toFixed(2)}</span>
+            </div>
           </div>
           <div style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={() => { setSubmitted(null); setSelectedColors([]); setOccasion(""); setCustomWords([""]); setWantsButton(null); setButtonText(""); setForm({parentName:"",email:"",phone:"",recipientName:"",shippingAddress:"",notes:""}); }}
+            <button onClick={() => { setSubmitted(null); setSelectedColors([]); setOccasion(""); setCustomWords([""]); setWantsButton(null); setButtonText(""); setFulfillment(null); setForm({parentName:"",email:"",phone:"",recipientName:"",shippingAddress:"",notes:""}); window.scrollTo(0,0); }}
               style={{background:"linear-gradient(135deg,#c8833a,#a85200)",color:"white",border:"none",borderRadius:"12px",padding:"12px 28px",cursor:"pointer",fontSize:"14px",fontWeight:"600",fontFamily:"sans-serif"}}>
               Place Another Order
             </button>
@@ -1627,6 +1656,32 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
               )}
             </div>
 
+            {/* FULFILLMENT SELECTOR */}
+            <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)"}}>
+              <h3 style={{margin:"0 0 6px",color:"#5a3000",fontSize:"18px",fontFamily:"'Georgia',serif"}}>📦 Shipping or Pickup?</h3>
+              <p style={{margin:"0 0 18px",color:"#9a7040",fontSize:"13px",fontFamily:"sans-serif"}}>Choose how you'd like to receive your order</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+                <button onClick={() => setFulfillment("shipping")}
+                  style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px",borderRadius:"14px",border:`2px solid ${fulfillment==="shipping"?"#635bff":"#e5c88a"}`,background:fulfillment==="shipping"?"#f8f4ff":"white",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                  <span style={{fontSize:"24px",marginTop:"2px"}}>🚚</span>
+                  <div>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#3d1500",fontFamily:"sans-serif"}}>Ship via USPS (+$15)</div>
+                    <div style={{fontSize:"12px",color:"#9a7040",fontFamily:"sans-serif",marginTop:"2px"}}>Flat-rate priority shipping to anywhere in the US. Enter your address below.</div>
+                  </div>
+                  {fulfillment==="shipping" && <span style={{marginLeft:"auto",color:"#635bff",fontSize:"18px",fontWeight:"700"}}>✓</span>}
+                </button>
+                <button onClick={() => setFulfillment("pickup")}
+                  style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px",borderRadius:"14px",border:`2px solid ${fulfillment==="pickup"?"#059669":"#e5c88a"}`,background:fulfillment==="pickup"?"#f0fdf4":"white",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                  <span style={{fontSize:"24px",marginTop:"2px"}}>📍</span>
+                  <div>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#3d1500",fontFamily:"sans-serif"}}>Local Pickup — FREE</div>
+                    <div style={{fontSize:"12px",color:"#9a7040",fontFamily:"sans-serif",marginTop:"2px"}}>Available in the <strong>98391 area only</strong> (Bonney Lake / Sumner, WA). Once your product is ready, we'll email you to coordinate a convenient drop-off time and location.</div>
+                  </div>
+                  {fulfillment==="pickup" && <span style={{marginLeft:"auto",color:"#059669",fontSize:"18px",fontWeight:"700"}}>✓</span>}
+                </button>
+              </div>
+            </div>
+
             {/* CONTACT FORM */}
             <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)"}}>
               <h3 style={{margin:"0 0 20px",color:"#5a3000",fontSize:"18px",fontFamily:"'Georgia',serif"}}>👤 Your Information</h3>
@@ -1635,7 +1690,6 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
                 {label:"Email Address *",key:"email",placeholder:"jane@email.com",type:"email"},
                 {label:"Phone Number *",key:"phone",placeholder:"(555) 123-4567",type:"tel"},
                 {label:"Recipient's Name *",key:"recipientName",placeholder:"Alex Smith"},
-                {label:"Ship-to Address (skip if local pickup)",key:"shippingAddress",placeholder:"123 Main St, City, State ZIP"},
               ].map(f => (
                 <div key={f.key} style={{marginBottom:"16px"}}>
                   <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600",letterSpacing:"0.3px"}}>{f.label}</label>
@@ -1648,9 +1702,23 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
                     onBlur={e=>e.target.style.borderColor="#e5c88a"}/>
                 </div>
               ))}
+              {/* Only show shipping address if shipping is selected */}
+              {fulfillment === "shipping" && (
+                <div style={{marginBottom:"16px"}}>
+                  <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600",letterSpacing:"0.3px"}}>Ship-to Address *</label>
+                  <input type="text" placeholder="123 Main St, City, State ZIP"
+                    value={form.shippingAddress}
+                    onChange={e => setForm({...form, shippingAddress:e.target.value})}
+                    style={{width:"100%",padding:"12px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",
+                      fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",
+                      boxSizing:"border-box",outline:"none"}}
+                    onFocus={e=>e.target.style.borderColor="#c8833a"}
+                    onBlur={e=>e.target.style.borderColor="#e5c88a"}/>
+                </div>
+              )}
               <div style={{marginBottom:"20px"}}>
                 <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>Special Notes / Instructions</label>
-                <textarea placeholder="Ceremony date, pickup preferences, any other requests..."
+                <textarea placeholder="Ceremony date, any other requests..."
                   value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} rows={3}
                   style={{width:"100%",padding:"12px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",
                     fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",
@@ -1658,8 +1726,7 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
               </div>
 
               <div style={{background:"#fdf8f0",borderRadius:"12px",padding:"14px",marginBottom:"20px",border:"1px solid #edd9a0",fontSize:"12px",color:"#7a5520",fontFamily:"sans-serif",lineHeight:"1.8"}}>
-                <div>📩 After submitting, you'll be able to pay securely via <strong>Stripe</strong> — no account needed. Each lei is handmade just for you!</div>
-                <div style={{marginTop:"8px",paddingTop:"8px",borderTop:"1px dashed #e5c88a"}}>🚚 <strong>Local pickup available (Pacific Northwest).</strong> If you're outside the PNW area, shipping will be extra — we'll follow up via email to determine the best option (priority vs. standard).</div>
+                📩 After submitting, you'll be able to pay securely via <strong>Stripe</strong> — no account needed. Each product is handmade just for you!
               </div>
 
               <button onClick={formValid ? handleSubmit : () => {
@@ -1699,12 +1766,14 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
                 hasMoney={leiTier==='money'} billDenom={1} billCount={20}
                 themes={[]} customText={combinedText} />
             </div>
-            <PricingCard leiTier={leiTier} wantsButton={wantsButton===true} colors={selectedColors} />
+            <PricingCard leiTier={leiTier} wantsButton={wantsButton===true} colors={selectedColors} fulfillment={fulfillment} />
             <div style={{fontSize:"11px",fontFamily:"sans-serif",lineHeight:"1.9",background:"#fdf8f0",padding:"10px 14px",borderRadius:"10px",border:"1px solid #edd9a0"}}>
               {[
                 { done: selectedColors.length >= 2, label: "Select exactly 2 colors", field: "field-colors" },
                 { done: wantsButton !== null, label: "Answer: Add a button?", field: "field-button" },
                 { done: !(wantsButton===true) || buttonText.trim().length > 0, label: "Enter button text", field: "field-button", show: wantsButton === true },
+                { done: fulfillment !== null, label: "Choose shipping or pickup" },
+                { done: fulfillment === "pickup" || !!form.shippingAddress, label: "Enter ship-to address", show: fulfillment === "shipping" },
                 { done: !!form.parentName, label: "Your name", field: "contact" },
                 { done: !!form.email, label: "Email address", field: "contact" },
                 { done: !!form.phone, label: "Phone number", field: "contact" },
@@ -1746,9 +1815,14 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
         }
 
         @media (max-width: 600px) {
-          .admin-row { grid-template-columns: 1fr auto !important; gap: 8px !important; }
+          .admin-row { grid-template-columns: 1fr auto auto !important; gap: 8px !important; }
+          .admin-row > span:last-child { grid-column: 3; }
           .admin-detail { grid-template-columns: 1fr !important; }
           .admin-status-row { flex-wrap: wrap !important; }
+        }
+
+        @media (max-width: 400px) {
+          .admin-row { grid-template-columns: 1fr auto !important; }
         }
 
         @media (max-width: 480px) {
@@ -1763,12 +1837,16 @@ function LeiOrderForm({ prePopulate, initialTier, onBack }) {
 function ButtonOrderForm({ onBack }) {
   const [buttonText, setButtonText] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [form, setForm] = useState({ name:"", email:"", phone:"", notes:"" });
+  const [fulfillment, setFulfillment] = useState(null);
+  const [form, setForm] = useState({ name:"", email:"", phone:"", shippingAddress:"", notes:"" });
   const [submitted, setSubmitted] = useState(null);
 
-  const total = quantity * BUTTON_PRICE;
+  const shippingCost = fulfillment === "shipping" ? SHIPPING_PRICE : 0;
+  const total = quantity * BUTTON_PRICE + shippingCost;
 
-  const formValid = buttonText.trim().length > 0 && form.name && form.email && form.phone;
+  const formValid = buttonText.trim().length > 0 && form.name && form.email && form.phone
+    && fulfillment !== null
+    && (fulfillment === "pickup" || form.shippingAddress.trim().length > 0);
 
   const handleSubmit = async () => {
     const order = {
@@ -1776,7 +1854,8 @@ function ButtonOrderForm({ onBack }) {
       submittedAt: new Date().toISOString(),
       status: "new",
       type: 'button',
-      contact: { parentName: form.name, name: form.name, email: form.email, phone: form.phone, notes: form.notes },
+      fulfillment,
+      contact: { parentName: form.name, name: form.name, email: form.email, phone: form.phone, shippingAddress: form.shippingAddress, notes: form.notes },
       design: { buttonText, quantity },
       total,
     };
@@ -1787,41 +1866,46 @@ function ButtonOrderForm({ onBack }) {
   if (submitted) {
     const ordId = submitted.id;
     const emailEnc = encodeURIComponent(submitted.contact.email || "");
-    const shipLink = `${STRIPE_LINKS.button_ship}?client_reference_id=${ordId}__shipping&prefilled_email=${emailEnc}`;
-    const pickupLink = `${STRIPE_LINKS.button_pickup}?client_reference_id=${ordId}__pickup&prefilled_email=${emailEnc}`;
+    const chosenFulfillment = submitted.fulfillment || "shipping";
+    const payLink = `${STRIPE_LINKS[`button_${chosenFulfillment}`]}?client_reference_id=${ordId}__${chosenFulfillment}&prefilled_email=${emailEnc}`;
+    const isPickup = chosenFulfillment === "pickup";
     return (
       <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#fdf6ec,#fce4b8)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Georgia',serif",padding:"24px"}}>
         <div style={{background:"white",borderRadius:"24px",padding:"40px 32px",textAlign:"center",maxWidth:"440px",width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.1)"}}>
           <div style={{fontSize:"52px",marginBottom:"10px"}}>🔘</div>
-          <h2 style={{fontSize:"24px",color:"#5a3e1b",marginBottom:"8px",fontStyle:"italic"}}>Button Order Received!</h2>
-          <p style={{color:"#8a6a40",lineHeight:"1.7",marginBottom:"20px",fontFamily:"sans-serif",fontSize:"14px"}}>
+          <h2 style={{fontSize:"24px",color:"#5a3e1b",marginBottom:"8px",fontStyle:"italic"}}>Order Received!</h2>
+          <p style={{color:"#8a6a40",lineHeight:"1.7",marginBottom:"16px",fontFamily:"sans-serif",fontSize:"14px"}}>
             Thank you, <strong>{submitted.contact.name}</strong>! You'll receive a confirmation at <strong>{submitted.contact.email}</strong> once payment is complete.
           </p>
 
-          {/* Payment buttons */}
-          <div style={{background:"#f8f4ff",borderRadius:"16px",padding:"20px",marginBottom:"20px",border:"1px solid #d4c4f8"}}>
-            <div style={{fontSize:"13px",fontWeight:"700",color:"#4f46e5",marginBottom:"12px",fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.5px"}}>
-              💳 Choose How to Pay
-            </div>
-            <div style={{display:"flex",gap:"10px",justifyContent:"center",flexWrap:"wrap"}}>
-              <a href={shipLink} target="_blank" rel="noopener noreferrer"
-                style={{display:"inline-block",background:"linear-gradient(135deg,#635bff,#4f46e5)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"13px 22px",fontSize:"14px",fontWeight:"700",boxShadow:"0 4px 16px rgba(99,91,255,0.35)"}}>
-                🚚 Ship to Me (USPS +$15)
-              </a>
-              <a href={pickupLink} target="_blank" rel="noopener noreferrer"
-                style={{display:"inline-block",background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"13px 22px",fontSize:"14px",fontWeight:"700",boxShadow:"0 4px 16px rgba(14,165,233,0.35)"}}>
-                📍 Local Pickup (98391)
-              </a>
-            </div>
-            <p style={{color:"#9a7040",fontSize:"11px",marginTop:"10px",fontFamily:"sans-serif"}}>$5 per button · Secure payment powered by Stripe</p>
+          {/* Fulfillment confirmation */}
+          <div style={{background: isPickup ? "#f0fdf4" : "#f0f9ff", border:`1px solid ${isPickup?"#bbf7d0":"#bae6fd"}`, borderRadius:"12px", padding:"12px 16px", marginBottom:"16px", fontSize:"13px", fontFamily:"sans-serif", color: isPickup?"#14532d":"#0c4a6e", fontWeight:"600"}}>
+            {isPickup
+              ? "📍 Local Pickup — we'll email you to coordinate a drop-off once your order is ready."
+              : `🚚 USPS Shipping — shipping to: ${submitted.contact.shippingAddress}`}
           </div>
 
-          <div style={{background:"#fdf6ec",borderRadius:"12px",padding:"14px",marginBottom:"20px",fontSize:"13px",color:"#6a4e2a",fontFamily:"sans-serif",lineHeight:"1.8"}}>
-            <div><strong>Button says:</strong> "{submitted.design.buttonText}"</div>
-            <div><strong>Quantity:</strong> {submitted.design.quantity} × $5 = <strong>${submitted.total}</strong></div>
+          {/* Payment */}
+          <div style={{background:"#f8f4ff",borderRadius:"16px",padding:"20px",marginBottom:"20px",border:"1px solid #d4c4f8"}}>
+            <div style={{fontSize:"13px",fontWeight:"700",color:"#4f46e5",marginBottom:"12px",fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.5px"}}>
+              💳 Pay for Your Order
+            </div>
+            <a href={payLink} target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-block",background: isPickup ? "linear-gradient(135deg,#0ea5e9,#0284c7)" : "linear-gradient(135deg,#635bff,#4f46e5)",color:"white",textDecoration:"none",borderRadius:"12px",padding:"14px 28px",fontSize:"15px",fontWeight:"700",boxShadow: isPickup ? "0 4px 16px rgba(14,165,233,0.35)" : "0 4px 16px rgba(99,91,255,0.35)"}}>
+              {isPickup ? "📍 Pay — Local Pickup" : "🚚 Pay — Ship to Me (USPS +$15)"}
+            </a>
+            <p style={{color:"#9a7040",fontSize:"11px",marginTop:"10px",fontFamily:"sans-serif"}}>Secure payment powered by Stripe</p>
+          </div>
+
+          <div style={{background:"#fdf6ec",borderRadius:"12px",padding:"14px",marginBottom:"20px",fontSize:"13px",color:"#6a4e2a",fontFamily:"sans-serif",lineHeight:"1.8",textAlign:"left"}}>
+            <div style={{display:"flex",justifyContent:"space-between"}}><span>Button: "{submitted.design.buttonText}"</span><span>{submitted.design.quantity} × $5</span></div>
+            {!isPickup && <div style={{display:"flex",justifyContent:"space-between"}}><span>USPS Shipping</span><span>+$15</span></div>}
+            <div style={{borderTop:"1px dashed #ddd",marginTop:"6px",paddingTop:"6px",display:"flex",justifyContent:"space-between",fontWeight:"700",color:"#3d1500"}}>
+              <span>Total</span><span>${submitted.total.toFixed(2)}</span>
+            </div>
           </div>
           <div style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={() => { setSubmitted(null); setButtonText(''); setQuantity(1); setForm({name:"",email:"",phone:"",notes:""}); }}
+            <button onClick={() => { setSubmitted(null); setButtonText(''); setQuantity(1); setFulfillment(null); setForm({name:"",email:"",phone:"",shippingAddress:"",notes:""}); window.scrollTo(0,0); }}
               style={{background:"linear-gradient(135deg,#c8833a,#a85200)",color:"white",border:"none",borderRadius:"12px",padding:"12px 28px",cursor:"pointer",fontSize:"14px",fontWeight:"600",fontFamily:"sans-serif"}}>
               Order Another
             </button>
@@ -1846,50 +1930,89 @@ function ButtonOrderForm({ onBack }) {
         </p>
       </div>
 
-      <div style={{maxWidth:"600px",margin:"0 auto",padding:"24px 18px 60px"}}>
+      <div style={{maxWidth:"640px",margin:"0 auto",padding:"24px 18px 60px"}}>
         <button onClick={onBack}
           style={{background:"none",border:"none",color:"#c8833a",cursor:"pointer",fontSize:"14px",fontFamily:"sans-serif",fontWeight:"600",padding:"0 0 20px",display:"flex",alignItems:"center",gap:"6px"}}>
           ← Back to Gallery
         </button>
 
-        <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)",marginBottom:"20px"}}>
-          <h2 style={{margin:"0 0 6px",color:"#5a3000",fontSize:"22px",fontFamily:"'Georgia',serif"}}>🔘 Order a Personalized Button</h2>
-          <p style={{margin:"0 0 24px",color:"#9a7040",fontSize:"13px",fontFamily:"sans-serif"}}>${BUTTON_PRICE} per button — custom text, any occasion</p>
+        {/* Button text + preview */}
+        <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)",marginBottom:"16px"}}>
+          <h2 style={{margin:"0 0 4px",color:"#5a3000",fontSize:"22px",fontFamily:"'Georgia',serif"}}>🔘 Order a Personalized Button</h2>
+          <p style={{margin:"0 0 22px",color:"#9a7040",fontSize:"13px",fontFamily:"sans-serif"}}>${BUTTON_PRICE} per button — custom text, any occasion</p>
 
-          <div style={{marginBottom:"20px"}}>
+          <div style={{marginBottom:"16px"}}>
             <label style={{display:"block",marginBottom:"6px",fontSize:"13px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>
               What would you like on your button? *
             </label>
             <input type="text" placeholder="e.g. CLASS OF 2025, GO BEARS, CONGRATS ALEX"
               value={buttonText} onChange={e => setButtonText(e.target.value)} maxLength={30}
-              style={{width:"100%",boxSizing:"border-box",padding:"12px 16px",borderRadius:"12px",border:"1.5px solid #e5c88a",fontSize:"15px",fontFamily:"sans-serif",color:"#3d1500",background:"#fffdf8",outline:"none"}}
+              style={{width:"100%",boxSizing:"border-box",padding:"13px 16px",borderRadius:"12px",border:"1.5px solid #e5c88a",fontSize:"15px",fontFamily:"sans-serif",color:"#3d1500",background:"#fffdf8",outline:"none"}}
               onFocus={e => e.target.style.borderColor="#c8833a"}
               onBlur={e => e.target.style.borderColor="#e5c88a"}
             />
-            {buttonText.trim() && (
-              <div style={{marginTop:"10px",background:"#eef0ff",border:"1px solid #aab4f0",borderRadius:"10px",padding:"12px 16px",fontFamily:"sans-serif",fontSize:"13px",color:"#3a4a9c"}}>
-                Your button will say: <strong>"{buttonText}"</strong>
-              </div>
-            )}
           </div>
 
-          <div style={{marginBottom:"24px"}}>
+          {/* Button preview */}
+          {buttonText.trim() && (
+            <div style={{marginBottom:"16px",textAlign:"center"}}>
+              <div style={{fontSize:"11px",color:"#9a7040",fontFamily:"sans-serif",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Preview</div>
+              <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:"110px",height:"110px",borderRadius:"50%",background:"linear-gradient(135deg,#1a1a2e,#16213e)",border:"4px solid #c8833a",boxShadow:"0 4px 20px rgba(0,0,0,0.2)",position:"relative"}}>
+                <div style={{background:"linear-gradient(135deg,#c8833a,#a85200)",borderRadius:"50%",width:"96px",height:"96px",display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",boxSizing:"border-box"}}>
+                  <span style={{color:"white",fontFamily:"sans-serif",fontWeight:"900",fontSize:buttonText.length > 12 ? "9px" : buttonText.length > 8 ? "11px" : "13px",textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px",lineHeight:"1.2",wordBreak:"break-word"}}>{buttonText}</span>
+                </div>
+              </div>
+              <div style={{fontSize:"11px",color:"#b08050",fontFamily:"sans-serif",marginTop:"6px"}}>Approximate preview — final button may vary slightly</div>
+            </div>
+          )}
+
+          <div style={{marginBottom:"8px"}}>
             <label style={{display:"block",marginBottom:"8px",fontSize:"13px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>
               Quantity
             </label>
             <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
               <button onClick={() => setQuantity(Math.max(1, quantity-1))}
-                style={{width:"38px",height:"38px",borderRadius:"50%",border:"2px solid #e0c89a",background:"white",cursor:"pointer",fontSize:"20px",color:"#c8833a",fontWeight:"bold",lineHeight:1}}>−</button>
-              <span style={{fontSize:"24px",fontWeight:"700",color:"#3d1500",fontFamily:"sans-serif",minWidth:"36px",textAlign:"center"}}>{quantity}</span>
+                style={{width:"40px",height:"40px",borderRadius:"50%",border:"2px solid #e0c89a",background:"white",cursor:"pointer",fontSize:"22px",color:"#c8833a",fontWeight:"bold",lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+              <span style={{fontSize:"26px",fontWeight:"700",color:"#3d1500",fontFamily:"sans-serif",minWidth:"40px",textAlign:"center"}}>{quantity}</span>
               <button onClick={() => setQuantity(Math.min(20, quantity+1))}
-                style={{width:"38px",height:"38px",borderRadius:"50%",border:"2px solid #e0c89a",background:"white",cursor:"pointer",fontSize:"20px",color:"#c8833a",fontWeight:"bold",lineHeight:1}}>+</button>
-              <span style={{fontSize:"16px",fontWeight:"700",color:"#c8833a",fontFamily:"sans-serif"}}>
-                {quantity} × $5 = <strong>${total}</strong>
-              </span>
+                style={{width:"40px",height:"40px",borderRadius:"50%",border:"2px solid #e0c89a",background:"white",cursor:"pointer",fontSize:"22px",color:"#c8833a",fontWeight:"bold",lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              <div style={{fontFamily:"sans-serif"}}>
+                <span style={{fontSize:"15px",color:"#7a5520"}}>{quantity} × $5 = </span>
+                <span style={{fontSize:"18px",fontWeight:"800",color:"#c8833a"}}>${quantity * BUTTON_PRICE}</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <h3 style={{margin:"0 0 16px",color:"#5a3000",fontSize:"16px",fontFamily:"'Georgia',serif"}}>👤 Your Information</h3>
+        {/* Fulfillment selector */}
+        <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)",marginBottom:"16px"}}>
+          <h3 style={{margin:"0 0 6px",color:"#5a3000",fontSize:"18px",fontFamily:"'Georgia',serif"}}>📦 Shipping or Pickup?</h3>
+          <p style={{margin:"0 0 18px",color:"#9a7040",fontSize:"13px",fontFamily:"sans-serif"}}>Choose how you'd like to receive your order</p>
+          <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+            <button onClick={() => setFulfillment("shipping")}
+              style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px",borderRadius:"14px",border:`2px solid ${fulfillment==="shipping"?"#635bff":"#e5c88a"}`,background:fulfillment==="shipping"?"#f8f4ff":"white",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+              <span style={{fontSize:"24px",marginTop:"2px"}}>🚚</span>
+              <div>
+                <div style={{fontWeight:"700",fontSize:"14px",color:"#3d1500",fontFamily:"sans-serif"}}>Ship via USPS (+$15)</div>
+                <div style={{fontSize:"12px",color:"#9a7040",fontFamily:"sans-serif",marginTop:"2px"}}>Flat-rate shipping anywhere in the US.</div>
+              </div>
+              {fulfillment==="shipping" && <span style={{marginLeft:"auto",color:"#635bff",fontSize:"18px",fontWeight:"700"}}>✓</span>}
+            </button>
+            <button onClick={() => setFulfillment("pickup")}
+              style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px",borderRadius:"14px",border:`2px solid ${fulfillment==="pickup"?"#059669":"#e5c88a"}`,background:fulfillment==="pickup"?"#f0fdf4":"white",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+              <span style={{fontSize:"24px",marginTop:"2px"}}>📍</span>
+              <div>
+                <div style={{fontWeight:"700",fontSize:"14px",color:"#3d1500",fontFamily:"sans-serif"}}>Local Pickup — FREE</div>
+                <div style={{fontSize:"12px",color:"#9a7040",fontFamily:"sans-serif",marginTop:"2px"}}><strong>98391 area only</strong> (Bonney Lake / Sumner, WA). We'll email you to coordinate drop-off once ready.</div>
+              </div>
+              {fulfillment==="pickup" && <span style={{marginLeft:"auto",color:"#059669",fontSize:"18px",fontWeight:"700"}}>✓</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Contact info */}
+        <div style={{background:"white",borderRadius:"20px",padding:"28px",boxShadow:"0 4px 20px rgba(0,0,0,0.06)",marginBottom:"16px"}}>
+          <h3 style={{margin:"0 0 20px",color:"#5a3000",fontSize:"18px",fontFamily:"'Georgia',serif"}}>👤 Your Information</h3>
           {[
             {label:"Your Name *",key:"name",placeholder:"Jane Smith"},
             {label:"Email Address *",key:"email",placeholder:"jane@email.com",type:"email"},
@@ -1899,11 +2022,22 @@ function ButtonOrderForm({ onBack }) {
               <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>{f.label}</label>
               <input type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]}
                 onChange={e => setForm({...form,[f.key]:e.target.value})}
-                style={{width:"100%",padding:"11px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",boxSizing:"border-box",outline:"none"}}
+                style={{width:"100%",padding:"12px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",boxSizing:"border-box",outline:"none"}}
                 onFocus={e=>e.target.style.borderColor="#c8833a"}
                 onBlur={e=>e.target.style.borderColor="#e5c88a"}/>
             </div>
           ))}
+          {fulfillment === "shipping" && (
+            <div style={{marginBottom:"14px"}}>
+              <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>Ship-to Address *</label>
+              <input type="text" placeholder="123 Main St, City, State ZIP"
+                value={form.shippingAddress}
+                onChange={e => setForm({...form, shippingAddress:e.target.value})}
+                style={{width:"100%",padding:"12px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",boxSizing:"border-box",outline:"none"}}
+                onFocus={e=>e.target.style.borderColor="#c8833a"}
+                onBlur={e=>e.target.style.borderColor="#e5c88a"}/>
+            </div>
+          )}
           <div style={{marginBottom:"20px"}}>
             <label style={{display:"block",marginBottom:"5px",fontSize:"12px",color:"#7a4a20",fontFamily:"sans-serif",fontWeight:"600"}}>Notes / Special Requests</label>
             <textarea placeholder="Any special requests or questions..."
@@ -1911,8 +2045,13 @@ function ButtonOrderForm({ onBack }) {
               style={{width:"100%",padding:"11px 14px",borderRadius:"10px",border:"1.5px solid #e5c88a",fontSize:"14px",fontFamily:"sans-serif",color:"#4a3010",background:"#fffdf8",boxSizing:"border-box",resize:"vertical",outline:"none"}}/>
           </div>
 
-          <div style={{background:"#fdf8f0",borderRadius:"12px",padding:"14px",marginBottom:"20px",border:"1px solid #edd9a0",fontSize:"12px",color:"#7a5520",fontFamily:"sans-serif",lineHeight:"1.8"}}>
-            📩 After submitting, you'll be able to pay securely via <strong>Stripe</strong> — no account needed.
+          {/* Pricing summary */}
+          <div style={{background:"#fdf8f0",borderRadius:"12px",padding:"16px",marginBottom:"20px",border:"1px solid #edd9a0",fontSize:"13px",color:"#7a5520",fontFamily:"sans-serif"}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span>{quantity} × Button ($5 each)</span><span>${quantity * BUTTON_PRICE}.00</span></div>
+            {fulfillment === "shipping" && <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span>🚚 USPS Shipping</span><span>+$15.00</span></div>}
+            {fulfillment === "pickup" && <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",color:"#059669",fontWeight:"600"}}><span>📍 Local Pickup</span><span>FREE</span></div>}
+            <div style={{borderTop:"1px dashed #ddd",marginTop:"6px",paddingTop:"8px",display:"flex",justifyContent:"space-between",fontWeight:"800",fontSize:"15px",color:"#3d1500"}}><span>Total</span><span>${total.toFixed(2)}</span></div>
+            <div style={{marginTop:"10px",fontSize:"11px",color:"#b08050"}}>📩 After submitting, pay securely via <strong>Stripe</strong> — no account needed.</div>
           </div>
 
           <button onClick={formValid ? handleSubmit : undefined} disabled={!formValid}
@@ -1926,6 +2065,7 @@ function ButtonOrderForm({ onBack }) {
             }}>
             🔘 Submit Button Order
           </button>
+          <p style={{textAlign:"center",fontSize:"11px",color:"#b08050",marginTop:"10px",fontFamily:"sans-serif"}}>* Required fields must be filled to submit</p>
         </div>
       </div>
     </div>
